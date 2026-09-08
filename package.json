@@ -1,0 +1,19 @@
+{
+  "name": "emoji-sequence-kit",
+  "version": "0.1.0",
+  "description": "Segment and validate emoji sequences (ZWJ, flags, keycaps, tags), strict by default.",
+  "license": "MIT",
+  "author": "rmmiller4",
+  "type": "module",
+  "main": "./dist/sequences.js",
+  "types": "./dist/sequences.d.ts",
+  "bin": {
+    "emoji-seq": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
