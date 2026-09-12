@@ -97,11 +97,22 @@ There are no runtime dependencies. Compile with the TypeScript compiler:
 tsc -p .
 ```
 
+## Testing
+
+Tests use Node's built-in test runner, so there is nothing extra to
+install:
+
+```
+npm test
+```
+
+This compiles to `dist` and runs `node --test` against it.
+
 ## Roadmap
 
 See the commit history and issues for what's planned next; the short
 version is filling out the emoji base classifier from the real Unicode
-data tables and adding a test suite.
+data tables and validating flag sequences against real ISO region codes.
 
 ## License
 

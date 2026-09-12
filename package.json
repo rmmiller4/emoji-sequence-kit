@@ -13,6 +13,10 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "tsc -p . && node --test dist"
+  },
   "engines": {
     "node": ">=18"
   }
