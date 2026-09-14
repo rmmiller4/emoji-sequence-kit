@@ -23,6 +23,49 @@ const KEYCAP_BASES = new Set<number>([
   0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, // 0-9
 ]);
 
+// ISO 3166-1 alpha-2 country codes currently assigned. A flag sequence is
+// two regional indicators spelling one of these; anything else (XX, ZZ,
+// user-assigned ranges like AA/QM-QZ/XA-XZ/ZZ) renders as tofu or two
+// boxed letters in real fonts, so it's treated as malformed rather than a
+// valid flag.
+const VALID_REGION_CODES = new Set<string>(
+  (
+    'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ ' +
+    'BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ ' +
+    'CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ ' +
+    'DE DJ DK DM DO DZ ' +
+    'EC EE EG EH ER ES ET ' +
+    'FI FJ FK FM FO FR ' +
+    'GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY ' +
+    'HK HM HN HR HT HU ' +
+    'ID IE IL IM IN IO IQ IR IS IT ' +
+    'JE JM JO JP ' +
+    'KE KG KH KI KM KN KP KR KW KY KZ ' +
+    'LA LB LC LI LK LR LS LT LU LV LY ' +
+    'MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ ' +
+    'NA NC NE NF NG NI NL NO NP NR NU NZ ' +
+    'OM ' +
+    'PA PE PF PG PH PK PL PM PN PR PS PT PW PY ' +
+    'QA ' +
+    'RE RO RS RU RW ' +
+    'SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ ' +
+    'TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ ' +
+    'UA UG UM US UY UZ ' +
+    'VA VC VE VG VI VN VU ' +
+    'WF WS ' +
+    'YE YT ' +
+    'ZA ZM ZW'
+  ).split(' '),
+);
+
+function regionalIndicatorLetter(cp: number): string {
+  return String.fromCharCode(cp - REGIONAL_INDICATOR_START + 0x41);
+}
+
+function isValidRegionPair(first: number, second: number): boolean {
+  return VALID_REGION_CODES.has(regionalIndicatorLetter(first) + regionalIndicatorLetter(second));
+}
+
 const EMOJI_BASE_RANGES: ReadonlyArray<readonly [number, number]> = [
   [0x2600, 0x27bf], // misc symbols and dingbats
   [0x1f300, 0x1f5ff], // misc symbols and pictographs
@@ -162,10 +205,19 @@ export function parse(input: string, options: ParseOptions = {}): EmojiToken[] {
       continue;
     }
 
-    // Flag sequence: exactly two regional indicators.
+    // Flag sequence: exactly two regional indicators spelling a real
+    // ISO 3166-1 region code.
     if (isRegionalIndicator(cp)) {
-      if (i + 1 < n && isRegionalIndicator(codePoints[i + 1] as number)) {
-        tokens.push(makeToken('flag', chars, i, i + 2));
+      const next = codePoints[i + 1];
+      if (i + 1 < n && isRegionalIndicator(next as number)) {
+        if (isValidRegionPair(cp, next as number)) {
+          tokens.push(makeToken('flag', chars, i, i + 2));
+          i += 2;
+          continue;
+        }
+        const code = regionalIndicatorLetter(cp) + regionalIndicatorLetter(next as number);
+        if (!lenient) fail(`"${code}" is not a real ISO region code`, i);
+        tokens.push(makeToken('malformed', chars, i, i + 2));
         i += 2;
         continue;
       }

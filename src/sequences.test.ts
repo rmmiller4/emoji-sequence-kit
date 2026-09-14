@@ -83,6 +83,16 @@ test('text and emoji interleave into separate tokens', () => {
   assert.deepEqual(kinds(tokens), ['text', 'basic', 'text']);
 });
 
+test('regional indicator pair spelling a non-country code throws by default', () => {
+  // X and X: XX is in the user-assigned range, not a real ISO code.
+  assert.throws(() => parse(cp(0x1f1fd, 0x1f1fd)), EmojiSequenceError);
+});
+
+test('regional indicator pair spelling a non-country code is malformed in lenient mode', () => {
+  const tokens = parse(cp(0x1f1fd, 0x1f1fd), { lenient: true });
+  assert.deepEqual(kinds(tokens), ['malformed']);
+});
+
 test('lone regional indicator throws by default', () => {
   assert.throws(() => parse(cp(0x1f1ec)), EmojiSequenceError);
 });

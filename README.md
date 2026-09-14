@@ -26,9 +26,12 @@ control.
 The base-emoji classifier uses a curated set of Unicode block ranges
 (emoticons, transport, dingbats, and so on), not the full `emoji-data.txt`
 property table, so some valid emoji outside those blocks won't be
-recognized as sequence starters, and flag sequences are checked for shape
-(two regional indicators) but not against the list of real ISO region
-codes. See the roadmap below.
+recognized as sequence starters. See the roadmap below.
+
+Flag sequences, on the other hand, are checked against the real list of
+ISO 3166-1 alpha-2 country codes: two regional indicators that don't spell
+an assigned code (like the user-assigned `XX`) are rejected as malformed,
+the same as a lone regional indicator.
 
 ## Library usage
 
@@ -112,7 +115,8 @@ This compiles to `dist` and runs `node --test` against it.
 
 See the commit history and issues for what's planned next; the short
 version is filling out the emoji base classifier from the real Unicode
-data tables and validating flag sequences against real ISO region codes.
+data tables, adding a `count` command for grapheme-aware emoji counting,
+and letting `check` read multiple lines from stdin.
 
 ## License
 
