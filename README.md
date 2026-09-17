@@ -59,6 +59,11 @@ parse('\u{1F44D}\u{1F3FD}');
 isValid('\u{1F468}‍'); // false, strict by default
 isValid('\u{1F468}‍', { lenient: true }); // true
 
+// grapheme-aware counting: the family emoji is 7 code points but reads
+// as one character
+countGraphemes(family); // 1
+countGraphemes(`hi ${family}`); // 4
+
 try {
   parse('\u{1F468}‍');
 } catch (err) {
@@ -87,6 +92,9 @@ invalid
 
 $ echo -n "👨‍" | node dist/cli.js check --lenient
 ok
+
+$ node dist/cli.js count "👨‍👩‍👧‍👦 hi"
+4
 ```
 
 Text is taken from the trailing arguments if any are given, otherwise it
@@ -115,8 +123,7 @@ This compiles to `dist` and runs `node --test` against it.
 
 See the commit history and issues for what's planned next; the short
 version is filling out the emoji base classifier from the real Unicode
-data tables, adding a `count` command for grapheme-aware emoji counting,
-and letting `check` read multiple lines from stdin.
+data tables and letting `check` read multiple lines from stdin.
 
 ## License
 

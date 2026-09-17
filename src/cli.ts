@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { parse, isValid, EmojiSequenceError } from './sequences.js';
+import { parse, isValid, countGraphemes, EmojiSequenceError } from './sequences.js';
 
 function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -19,6 +19,8 @@ function printUsage(): void {
 commands:
   parse   segment text into emoji sequences and print them as json
   check   exit 0 if text is well-formed, 1 otherwise
+  count   print the number of perceived characters, counting each emoji
+          sequence as one regardless of how many code points it uses
 
 options:
   --lenient   accept malformed sequences instead of rejecting them
@@ -33,7 +35,7 @@ async function main(): Promise<void> {
   const command = positional[0];
   const rest = positional.slice(1);
 
-  if (command !== 'parse' && command !== 'check') {
+  if (command !== 'parse' && command !== 'check' && command !== 'count') {
     printUsage();
     process.exitCode = 1;
     return;
@@ -45,6 +47,20 @@ async function main(): Promise<void> {
     try {
       const tokens = parse(text, { lenient });
       console.log(JSON.stringify(tokens, null, 2));
+    } catch (err) {
+      if (err instanceof EmojiSequenceError) {
+        console.error(`invalid sequence at position ${err.index}: ${err.message}`);
+        process.exitCode = 1;
+        return;
+      }
+      throw err;
+    }
+    return;
+  }
+
+  if (command === 'count') {
+    try {
+      console.log(String(countGraphemes(text, { lenient })));
     } catch (err) {
       if (err instanceof EmojiSequenceError) {
         console.error(`invalid sequence at position ${err.index}: ${err.message}`);

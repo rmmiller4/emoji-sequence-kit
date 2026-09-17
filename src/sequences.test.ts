@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, isValid, EmojiSequenceError, type EmojiToken } from './sequences.js';
+import { parse, isValid, countGraphemes, EmojiSequenceError, type EmojiToken } from './sequences.js';
 
 function cp(...points: number[]): string {
   return String.fromCodePoint(...points);
@@ -134,6 +134,36 @@ test('isValid mirrors parse without throwing', () => {
   assert.equal(isValid(cp(0x1f600)), true);
   assert.equal(isValid(cp(0x1f1ec)), false);
   assert.equal(isValid(cp(0x1f1ec), { lenient: true }), true);
+});
+
+test('countGraphemes counts a ZWJ family sequence as one character', () => {
+  const family = cp(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467, 0x200d, 0x1f466);
+  assert.equal(countGraphemes(family), 1);
+});
+
+test('countGraphemes counts a flag sequence as one character', () => {
+  assert.equal(countGraphemes(cp(0x1f1ec, 0x1f1e7)), 1);
+});
+
+test('countGraphemes counts a keycap sequence as one character', () => {
+  assert.equal(countGraphemes(cp(0x31, 0xfe0f, 0x20e3)), 1);
+});
+
+test('countGraphemes counts plain text by code point', () => {
+  assert.equal(countGraphemes('hi'), 2);
+});
+
+test('countGraphemes mixes text and emoji correctly', () => {
+  const input = `hi ${cp(0x1f600)}`;
+  assert.equal(countGraphemes(input), 4);
+});
+
+test('countGraphemes counts malformed sequences as one character in lenient mode', () => {
+  assert.equal(countGraphemes(cp(0x1f1ec), { lenient: true }), 1);
+});
+
+test('countGraphemes throws by default on malformed input', () => {
+  assert.throws(() => countGraphemes(cp(0x1f1ec)), EmojiSequenceError);
 });
 
 test('EmojiSequenceError reports the index of the failure', () => {

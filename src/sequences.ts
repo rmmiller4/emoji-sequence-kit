@@ -306,3 +306,20 @@ export function isValid(input: string, options: ParseOptions = {}): boolean {
     throw err;
   }
 }
+
+/**
+ * Counts perceived characters rather than code points: a family ZWJ
+ * sequence or a flag is one grapheme no matter how many code points it
+ * takes to encode, matching how a person counts what they typed. Plain
+ * text runs are counted by code point, which is only an approximation of
+ * grapheme clusters (it doesn't join combining marks onto their base
+ * character) but is exact for the emoji-free ASCII/BMP text this library
+ * is otherwise concerned with.
+ */
+export function countGraphemes(input: string, options: ParseOptions = {}): number {
+  let count = 0;
+  for (const token of parse(input, options)) {
+    count += token.kind === 'text' ? Array.from(token.text).length : 1;
+  }
+  return count;
+}
