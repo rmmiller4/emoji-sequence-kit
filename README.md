@@ -98,7 +98,16 @@ $ node dist/cli.js count "👨‍👩‍👧‍👦 hi"
 ```
 
 Text is taken from the trailing arguments if any are given, otherwise it
-is read from stdin.
+is read from stdin. `check` treats stdin specially when there is more than
+one line: each line is validated on its own, printed as `N: ok` or
+`N: invalid`, and the exit code is 1 if any line fails.
+
+```
+$ printf '👍🏽\n👨‍\n🇬🇧\n' | node dist/cli.js check
+1: ok
+2: invalid
+3: ok
+```
 
 ## Building
 
@@ -123,7 +132,7 @@ This compiles to `dist` and runs `node --test` against it.
 
 See the commit history and issues for what's planned next; the short
 version is filling out the emoji base classifier from the real Unicode
-data tables and letting `check` read multiple lines from stdin.
+data tables instead of the curated block ranges above.
 
 ## License
 

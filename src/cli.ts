@@ -8,9 +8,20 @@ function readStdin(): Promise<string> {
     process.stdin.on('data', (chunk) => {
       data += chunk;
     });
-    process.stdin.on('end', () => resolve(data.replace(/\n$/, '')));
+    process.stdin.on('end', () => resolve(data));
     process.stdin.on('error', reject);
   });
+}
+
+/**
+ * Splits raw stdin into lines the way most line-oriented tools do: a
+ * trailing newline at the very end doesn't produce a spurious empty last
+ * line, but an empty file still yields one (empty) line to check.
+ */
+function splitLines(raw: string): string[] {
+  const lines = raw.split(/\r\n|\r|\n/);
+  if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+  return lines;
 }
 
 function printUsage(): void {
@@ -18,7 +29,8 @@ function printUsage(): void {
 
 commands:
   parse   segment text into emoji sequences and print them as json
-  check   exit 0 if text is well-formed, 1 otherwise
+  check   exit 0 if text is well-formed, 1 otherwise; reads multiple lines
+          from stdin and checks each one independently
   count   print the number of perceived characters, counting each emoji
           sequence as one regardless of how many code points it uses
 
@@ -41,7 +53,24 @@ async function main(): Promise<void> {
     return;
   }
 
-  const text = rest.length > 0 ? rest.join(' ') : await readStdin();
+  if (command === 'check') {
+    const lines = rest.length > 0 ? [rest.join(' ')] : splitLines(await readStdin());
+    const multiLine = lines.length > 1;
+    let allValid = true;
+    for (const [index, line] of lines.entries()) {
+      const prefix = multiLine ? `${index + 1}: ` : '';
+      if (isValid(line, { lenient })) {
+        console.log(`${prefix}ok`);
+      } else {
+        console.error(`${prefix}invalid`);
+        allValid = false;
+      }
+    }
+    if (!allValid) process.exitCode = 1;
+    return;
+  }
+
+  const text = rest.length > 0 ? rest.join(' ') : (await readStdin()).replace(/\n$/, '');
 
   if (command === 'parse') {
     try {
@@ -70,13 +99,6 @@ async function main(): Promise<void> {
       throw err;
     }
     return;
-  }
-
-  if (isValid(text, { lenient })) {
-    console.log('ok');
-  } else {
-    console.error('invalid');
-    process.exitCode = 1;
   }
 }
 
